@@ -12,21 +12,21 @@
         .slider-container { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
         input[type="range"] { flex-grow: 1; }
         .math-text { font-family: 'Courier New', Courier, monospace; background: #ddd; padding: 2px 6px; border-radius: 4px; }
-        .toggle-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .checkbox-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>Binomial Limit (Binomial to Poisson)</h2>
-    <p>Set a fixed λ. As we continuously increase the number of trials <span class="math-text">n</span>, the probability of an event occurring in a single trial <span class="math-text">p = λ/n</span> gradually decreases. Observe how the blue bar chart (Binomial) perfectly aligns with the red line (Poisson).</p>
+    <p>Set a fixed λ. As we continuously increase the number of trials <span class="math-text">n</span>, the probability of an event occurring in a single trial <span class="math-text">p = λ/n</span> gradually decreases. Check the box to observe how the blue bar chart (Binomial) perfectly aligns with the red line (Poisson).</p>
     
     <canvas id="limitChart"></canvas>
 
     <div class="controls">
-        <div class="toggle-container">
-            <label for="poissonToggle" style="font-weight: bold; cursor: pointer;">Show Poisson(λ) Curve:</label>
-            <input type="checkbox" id="poissonToggle" checked style="cursor: pointer; width: 18px; height: 18px;">
+        <div class="checkbox-container">
+            <input type="checkbox" id="showPoissonCheckbox">
+            <label for="showPoissonCheckbox"><b>Show Poisson Distribution (Red Line)</b></label>
         </div>
         <div class="slider-container">
             <label style="width: 150px;"><b>Fixed λ (Lambda):</b></label>
@@ -97,7 +97,7 @@
                     borderWidth: 2,
                     tension: 0.3,
                     pointRadius: 3,
-                    hidden: false // Initial visibility state
+                    hidden: true // <-- Sets Poisson to be hidden by default
                 },
                 {
                     type: 'bar',
@@ -122,7 +122,13 @@
     const lambdaLimitSlider = document.getElementById('lambdaLimitSlider');
     const nSlider = document.getElementById('nSlider');
     const pValueDisplay = document.getElementById('pValue');
-    const poissonToggle = document.getElementById('poissonToggle');
+    const showPoissonCheckbox = document.getElementById('showPoissonCheckbox');
+
+    // Toggle Poisson visibility when checkbox changes
+    showPoissonCheckbox.addEventListener('change', function() {
+        limitChart.data.datasets[0].hidden = !this.checked;
+        limitChart.update();
+    });
 
     function updateLimitChart() {
         currentLambda = parseInt(lambdaLimitSlider.value);
@@ -150,6 +156,9 @@
         limitChart.update();
     }
 
-    // Event listeners
     lambdaLimitSlider.addEventListener('input', updateLimitChart);
-    nSlider.addEventListener('input',
+    nSlider.addEventListener('input', updateLimitChart);
+</script>
+
+</body>
+</html>
