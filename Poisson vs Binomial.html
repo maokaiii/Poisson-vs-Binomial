@@ -12,6 +12,7 @@
         .slider-container { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
         input[type="range"] { flex-grow: 1; }
         .math-text { font-family: 'Courier New', Courier, monospace; background: #ddd; padding: 2px 6px; border-radius: 4px; }
+        .toggle-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -23,6 +24,10 @@
     <canvas id="limitChart"></canvas>
 
     <div class="controls">
+        <div class="toggle-container">
+            <label for="poissonToggle" style="font-weight: bold; cursor: pointer;">Show Poisson(λ) Curve:</label>
+            <input type="checkbox" id="poissonToggle" checked style="cursor: pointer; width: 18px; height: 18px;">
+        </div>
         <div class="slider-container">
             <label style="width: 150px;"><b>Fixed λ (Lambda):</b></label>
             <input type="range" id="lambdaLimitSlider" min="1" max="10" step="1" value="5">
@@ -30,7 +35,7 @@
         </div>
         <div class="slider-container">
             <label style="width: 150px;"><b>Number of trials n:</b></label>
-            <input type="range" id="nSlider" min="1" max="200" step="1" value="10">
+            <input type="range" id="nSlider" min="5" max="200" step="1" value="10">
             <span id="nValue" style="width: 30px;">10</span>
         </div>
         <p style="margin-top: 15px; text-align: center; font-weight: bold; color: #e74c3c;">
@@ -91,7 +96,8 @@
                     backgroundColor: 'rgba(231, 76, 60, 0)',
                     borderWidth: 2,
                     tension: 0.3,
-                    pointRadius: 3
+                    pointRadius: 3,
+                    hidden: false // Initial visibility state
                 },
                 {
                     type: 'bar',
@@ -116,6 +122,7 @@
     const lambdaLimitSlider = document.getElementById('lambdaLimitSlider');
     const nSlider = document.getElementById('nSlider');
     const pValueDisplay = document.getElementById('pValue');
+    const poissonToggle = document.getElementById('poissonToggle');
 
     function updateLimitChart() {
         currentLambda = parseInt(lambdaLimitSlider.value);
@@ -143,9 +150,6 @@
         limitChart.update();
     }
 
+    // Event listeners
     lambdaLimitSlider.addEventListener('input', updateLimitChart);
-    nSlider.addEventListener('input', updateLimitChart);
-</script>
-
-</body>
-</html>
+    nSlider.addEventListener('input',
