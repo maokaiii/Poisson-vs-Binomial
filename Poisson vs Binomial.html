@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binomial Limit Approaching Poisson</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .controls { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px; }
+        .slider-container { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        input[type="range"] { flex-grow: 1; }
+        .math-text { font-family: 'Courier New', Courier, monospace; background: #ddd; padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Binomial Limit (Binomial to Poisson)</h2>
+    <p>Set a fixed λ. As we continuously increase the number of trials <span class="math-text">n</span>, the probability of an event occurring in a single trial <span class="math-text">p = λ/n</span> gradually decreases. Observe how the blue bar chart (Binomial) perfectly aligns with the red line (Poisson).</p>
+    
+    <canvas id="limitChart"></canvas>
+
+    <div class="controls">
+        <div class="slider-container">
+            <label style="width: 150px;"><b>Fixed λ (Lambda):</b></label>
+            <input type="range" id="lambdaLimitSlider" min="1" max="10" step="1" value="5">
+            <span id="lambdaLimitValue" style="width: 30px;">5</span>
+        </div>
+        <div class="slider-container">
+            <label style="width: 150px;"><b>Number of trials n:</b></label>
+            <input type="range" id="nSlider" min="1" max="200" step="1" value="10">
+            <span id="nValue" style="width: 30px;">10</span>
+        </div>
+        <p style="margin-top: 15px; text-align: center; font-weight: bold; color: #e74c3c;">
+            Current trial probability p = <span id="pValue">0.5000</span>
+        </p>
+    </div>
+</div>
+
+<script>
+    // Calculate Poisson probability (used for the red line)
+    function poissonProb(lambda, k) {
+        let prob = Math.exp(-lambda);
+        for(let i = 1; i <= k; i++) prob *= (lambda / i);
+        return prob;
+    }
+
+    // Calculate Binomial probability (stable recursive method to avoid Infinity when n is too large)
+    function generateBinomialData(n, p, maxK) {
+        const data = [];
+        let prob = Math.pow(1 - p, n); // P(X=0)
+        data.push(prob);
+        for (let k = 1; k <= maxK; k++) {
+            if (k > n) {
+                data.push(0);
+            } else {
+                // P(X=k) = P(X=k-1) * ((n-k+1)/k) * (p/(1-p))
+                prob = prob * ((n - k + 1) / k) * (p / (1 - p));
+                data.push(prob);
+            }
+        }
+        return data;
+    }
+
+    function generatePoissonData(lambda, maxK) {
+        const data = [];
+        for (let k = 0; k <= maxK; k++) data.push(poissonProb(lambda, k));
+        return data;
+    }
+
+    const ctxLimit = document.getElementById('limitChart').getContext('2d');
+    const maxK = 20; // X-axis displays up to 20 occurrences
+    const labels = Array.from({length: maxK + 1}, (_, i) => i);
+
+    let currentLambda = 5;
+    let currentN = 10;
+    let currentP = currentLambda / currentN;
+
+    const limitChart = new Chart(ctxLimit, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    type: 'line',
+                    label: 'Poisson(λ)',
+                    data: generatePoissonData(currentLambda, maxK),
+                    borderColor: 'rgba(231, 76, 60, 1)',
+                    backgroundColor: 'rgba(231, 76, 60, 0)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 3
+                },
+                {
+                    type: 'bar',
+                    label: 'Binomial(n, p)',
+                    data: generateBinomialData(currentN, currentP, maxK),
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 0.3, title: { display: true, text: 'Probability' } },
+                x: { title: { display: true, text: 'Number of occurrences (k)' } }
+            },
+            animation: { duration: 150 }
+        }
+    });
+
+    const lambdaLimitSlider = document.getElementById('lambdaLimitSlider');
+    const nSlider = document.getElementById('nSlider');
+    const pValueDisplay = document.getElementById('pValue');
+
+    function updateLimitChart() {
+        currentLambda = parseInt(lambdaLimitSlider.value);
+        currentN = parseInt(nSlider.value);
+        
+        // Limit n to be greater than or equal to lambda, otherwise probability p will be > 1, which is illogical
+        if (currentN < currentLambda) {
+            currentN = currentLambda;
+            nSlider.value = currentN;
+            document.getElementById('nValue').textContent = currentN;
+        }
+        
+        currentP = currentLambda / currentN;
+
+        document.getElementById('lambdaLimitValue').textContent = currentLambda;
+        document.getElementById('nValue').textContent = currentN;
+        pValueDisplay.textContent = currentP.toFixed(4);
+
+        limitChart.data.datasets[0].data = generatePoissonData(currentLambda, maxK);
+        limitChart.data.datasets[1].data = generateBinomialData(currentN, currentP, maxK);
+        
+        // Dynamically adjust Y-axis to accommodate different lambda values
+        limitChart.options.scales.y.max = currentLambda < 3 ? 0.4 : 0.25;
+        
+        limitChart.update();
+    }
+
+    lambdaLimitSlider.addEventListener('input', updateLimitChart);
+    nSlider.addEventListener('input', updateLimitChart);
+</script>
+
+</body>
+</html>
